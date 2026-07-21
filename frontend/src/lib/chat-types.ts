@@ -23,6 +23,20 @@ export interface TextBlock {
   closed: boolean;
 }
 
+/**
+ * Gemma's internal planning narration, emitted as text parts carrying
+ * `thought: true`. It must never appear in the answer bubble, but it is shown
+ * as a collapsible reasoning trace because seeing the model plan is part of the
+ * demo's credibility.
+ */
+export interface ReasoningBlock {
+  kind: "reasoning";
+  id: string;
+  text: string;
+  author?: string;
+  closed: boolean;
+}
+
 export type ToolStatus = "running" | "done" | "error";
 
 export interface ToolBlock {
@@ -39,7 +53,7 @@ export interface ToolBlock {
   endedAt?: number;
 }
 
-export type TurnBlock = TextBlock | ToolBlock;
+export type TurnBlock = TextBlock | ToolBlock | ReasoningBlock;
 
 export interface UserMessage {
   role: "user";
@@ -83,4 +97,12 @@ export function assistantText(message: AssistantMessage): string {
 
 export function toolBlocks(message: AssistantMessage): ToolBlock[] {
   return message.blocks.filter((block): block is ToolBlock => block.kind === "tool");
+}
+
+export function reasoningText(message: AssistantMessage): string {
+  return message.blocks
+    .filter((block): block is ReasoningBlock => block.kind === "reasoning")
+    .map((block) => block.text)
+    .join("\n")
+    .trim();
 }

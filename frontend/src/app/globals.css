@@ -1,26 +1,376 @@
 @import "tailwindcss";
 
+/*
+ * Theme switching is driven by data-theme on <html>, which the inline script in
+ * layout.tsx sets before paint from localStorage or the system preference.
+ * That keeps the dark variant working for a manual toggle and for system dark.
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* --------------------------------------------------------------------------
+   Palette
+   Warm paper and ink rather than corporate white and blue. The primary is a
+   deep duka green, the secondary an ochre used sparingly, and amber is
+   reserved for the document conflict callout so it always reads as special.
+   -------------------------------------------------------------------------- */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #faf6ee;
+  --paper-2: #f2ebdd;
+  --surface: #ffffff;
+  --surface-2: #fbf8f2;
+  --line: #e7dcc8;
+  --line-strong: #d5c5ab;
+
+  --ink: #241c12;
+  --ink-soft: #4d4030;
+  --muted: #83705a;
+  --faint: #a3937c;
+
+  --brand: #14664a;
+  --brand-strong: #0d4b35;
+  --brand-soft: #e2efe8;
+  --brand-line: #b9d8c9;
+  --brand-on: #ffffff;
+
+  --accent: #b8761a;
+  --accent-soft: #fbf0dc;
+
+  --warn: #9a4f0c;
+  --warn-ink: #6d3806;
+  --warn-soft: #fdf2de;
+  --warn-line: #eac489;
+
+  --danger: #a03420;
+  --danger-soft: #fbeae5;
+  --danger-line: #eec0b3;
+
+  --ring: color-mix(in oklab, var(--brand) 45%, transparent);
+  --shadow-sm: 0 1px 2px rgb(60 44 24 / 0.06), 0 1px 3px rgb(60 44 24 / 0.05);
+  --shadow-md: 0 2px 4px rgb(60 44 24 / 0.05), 0 8px 24px rgb(60 44 24 / 0.08);
+  --shadow-lg: 0 4px 8px rgb(60 44 24 / 0.06), 0 24px 48px rgb(60 44 24 / 0.12);
+  --grain: rgb(120 96 60 / 0.045);
+}
+
+:root[data-theme="dark"] {
+  --paper: #14110d;
+  --paper-2: #1a1712;
+  --surface: #1e1a15;
+  --surface-2: #262119;
+  --line: #352e24;
+  --line-strong: #4a4133;
+
+  --ink: #f3ebdd;
+  --ink-soft: #d7cab5;
+  --muted: #9d8c75;
+  --faint: #7e6f5b;
+
+  --brand: #46c08d;
+  --brand-strong: #6ad4a8;
+  --brand-soft: #16342685;
+  --brand-line: #2c5f49;
+  --brand-on: #082117;
+
+  --accent: #e2a851;
+  --accent-soft: #33270f85;
+
+  --warn: #f0b75e;
+  --warn-ink: #f6d29a;
+  --warn-soft: #33240f;
+  --warn-line: #6d4d1d;
+
+  --danger: #f08a6e;
+  --danger-soft: #371c14;
+  --danger-line: #6e3324;
+
+  --ring: color-mix(in oklab, var(--brand) 55%, transparent);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 2px 4px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 4px 8px rgb(0 0 0 / 0.3), 0 24px 48px rgb(0 0 0 / 0.5);
+  --grain: rgb(255 236 200 / 0.02);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-line: var(--brand-line);
+  --color-brand-on: var(--brand-on);
+
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-warn: var(--warn);
+  --color-warn-ink: var(--warn-ink);
+  --color-warn-soft: var(--warn-soft);
+  --color-warn-line: var(--warn-line);
+
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+
+  --shadow-card: var(--shadow-sm);
+  --shadow-float: var(--shadow-md);
+  --shadow-pop: var(--shadow-lg);
 }
 
-@media (prefers-color-scheme: dark) {
+/* --------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+
+/* These live in the base layer so Tailwind utilities still override them.
+   Unlayered rules beat layered ones in the cascade regardless of specificity. */
+@layer base {
+  /* Tailwind v4 defaults border-color to currentColor, which is wrong here. */
+  *,
+  *::before,
+  *::after {
+    border-color: var(--line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    /* Two soft washes plus a hairline grid. Keeps large empty areas from
+       reading as a blank default template without adding any image weight. */
+    background-image:
+      radial-gradient(
+        70rem 40rem at 12% -12%,
+        color-mix(in oklab, var(--brand) 9%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        55rem 34rem at 100% 0%,
+        color-mix(in oklab, var(--accent) 10%, transparent),
+        transparent 62%
+      ),
+      linear-gradient(var(--grain) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grain) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 2.25rem 2.25rem, 2.25rem 2.25rem;
+    background-attachment: fixed, fixed, scroll, scroll;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--brand) 26%, transparent);
+    color: var(--ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: 0.35rem;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Scrollbars that match the paper rather than the OS default. */
+@supports selector(::-webkit-scrollbar) {
+  .scroll-paper::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .scroll-paper::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scroll-paper::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--line-strong) 70%, transparent);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  .scroll-paper::-webkit-scrollbar-thumb:hover {
+    background: var(--line-strong);
+    background-clip: content-box;
+  }
+}
+
+.scroll-paper {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+/* --------------------------------------------------------------------------
+   Motion
+   -------------------------------------------------------------------------- */
+
+@keyframes duka-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes duka-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes duka-sweep {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(210%);
+  }
+}
+
+@keyframes duka-pulse-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes duka-caret {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0.15;
+  }
+}
+
+.animate-rise {
+  animation: duka-rise 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade {
+  animation: duka-fade 0.25s ease both;
+}
+
+.sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--brand) 22%, transparent),
+    transparent
+  );
+  width: 45%;
+  animation: duka-sweep 1.5s ease-in-out infinite;
+}
+
+.dot-1 {
+  animation: duka-pulse-dot 1.2s ease-in-out infinite;
+}
+.dot-2 {
+  animation: duka-pulse-dot 1.2s ease-in-out 0.15s infinite;
+}
+.dot-3 {
+  animation: duka-pulse-dot 1.2s ease-in-out 0.3s infinite;
+}
+
+.caret {
+  animation: duka-caret 1s step-end infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .sweep::after {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Answer prose
+   -------------------------------------------------------------------------- */
+
+.answer {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.answer > * + * {
+  margin-top: 0.75rem;
+}
+
+.answer h3 {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.answer ul,
+.answer ol {
+  padding-left: 0.25rem;
+}
+
+.answer li + li {
+  margin-top: 0.375rem;
+}
+
+.answer strong {
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.answer code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.8125em;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  padding: 0.06em 0.34em;
+}
+
+.answer blockquote {
+  border-left: 3px solid var(--brand-line);
+  padding-left: 0.875rem;
+  color: var(--ink-soft);
 }

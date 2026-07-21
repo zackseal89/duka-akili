@@ -57,16 +57,25 @@ def load_chunks():
     return chunks
 
 
-def _client():
-    from google import genai
+_CLIENT = None
 
-    key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    if not key:
-        raise RuntimeError(
-            "GEMINI_API_KEY is not set. The agent needs it for both the Gemma "
-            "model and document embeddings."
-        )
-    return genai.Client(api_key=key)
+
+def _client():
+    # Held at module level. A client created per call can be garbage collected
+    # while its request is still in flight, which surfaces as
+    # "Cannot send a request, as the client has been closed".
+    global _CLIENT
+    if _CLIENT is None:
+        from google import genai
+
+        key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if not key:
+            raise RuntimeError(
+                "GEMINI_API_KEY is not set. The agent needs it for both the "
+                "Gemma model and document embeddings."
+            )
+        _CLIENT = genai.Client(api_key=key)
+    return _CLIENT
 
 
 def embed_texts(texts, task_type):

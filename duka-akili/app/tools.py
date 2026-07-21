@@ -12,6 +12,15 @@ from typing import Any
 
 from app.knowledge.retrieval import get_index
 
+# gemini-embedding-001 has a compressed cosine similarity range: calibrated
+# against this document set, clearly off-topic queries (wifi password, the
+# weather, football) scored 0.55 to 0.60, while genuine matches scored 0.73
+# and above. 0.65 sits in the gap with margin on both sides. This is what
+# makes the refusal behaviour ("nothing in the documents covers this") work;
+# too low a threshold and the tool always returns something, which the model
+# will then dutifully cite even when it is not actually relevant.
+RELEVANCE_THRESHOLD = 0.65
+
 
 def search_business_documents(query: str) -> dict[str, Any]:
     """Search the business's own documents and return the passages that answer a question.
@@ -40,7 +49,7 @@ def search_business_documents(query: str) -> dict[str, Any]:
             "relevance": round(score, 3),
         }
         for chunk, score in results
-        if score > 0.30  # below this the passage is not really about the query
+        if score > RELEVANCE_THRESHOLD
     ]
     return {
         "passages": passages,
@@ -74,7 +83,7 @@ def compare_sources_on_topic(topic: str) -> dict[str, Any]:
     results = get_index().search(topic, k=10)
     by_doc: dict[str, dict[str, Any]] = {}
     for chunk, score in results:
-        if score <= 0.30:
+        if score <= RELEVANCE_THRESHOLD:
             continue
         if chunk.doc not in by_doc:
             by_doc[chunk.doc] = {
