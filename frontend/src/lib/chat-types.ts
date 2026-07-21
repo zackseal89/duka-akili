@@ -1,7 +1,7 @@
 /** Shapes the chat UI renders. Built from ADK events by `turn-reducer.ts`. */
 
 export interface Citation {
-  /** Document filename, e.g. staff_handbook_supplier_returns.md */
+  /** Document filename, e.g. staff_handbook.md */
   doc: string;
   /** Section heading if one was cited or retrieved. */
   section?: string;

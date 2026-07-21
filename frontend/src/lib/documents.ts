@@ -7,7 +7,7 @@
  * up front what the assistant does and does not know about.
  */
 
-export type DocKind = "contract" | "handbook" | "policy" | "tax";
+export type DocKind = "contract" | "handbook" | "policy" | "tax" | "access";
 
 export interface KnowledgeDoc {
   /** Filename as it appears in citations, e.g. supplier_contract_unga_millers.md */
@@ -61,19 +61,45 @@ export const KNOWLEDGE_DOCS: KnowledgeDoc[] = [
     ],
   },
   {
-    id: "staff_handbook_supplier_returns.md",
+    id: "staff_handbook.md",
     label: "Staff handbook",
-    title: "Staff Handbook, Section 4: Handling Supplier Deliveries and Returns",
+    title: "Staff Handbook — Baraka General Store",
     kind: "handbook",
-    blurb: "What staff should do on deliveries, damages, driver payments, expiry.",
+    blurb: "Hours, customer service, till procedure, deliveries, safety, escalation.",
     sections: [
+      "1. Welcome and Shop Hours",
+      "2. Customer Service Standards",
+      "3. Cash Handling and Till Procedure",
+      "4. Handling Supplier Deliveries and Returns",
       "4.1 Receiving a delivery",
       "4.2 Damaged or torn stock",
       "4.3 Paying delivery drivers",
       "4.4 Expired stock",
-      "4.5 Who to contact",
+      "5. Health and Safety",
+      "6. Who to Contact",
     ],
     aliases: ["staff handbook", "handbook", "employee handbook", "kitabu cha wafanyakazi"],
+  },
+  {
+    id: "employee_roles_and_access_policy.md",
+    label: "Roles and access policy",
+    title: "Employee Roles and Access Policy — Baraka General Store",
+    kind: "access",
+    blurb: "Who may authorize what, and what each role may ask Duka Akili.",
+    sections: [
+      "1. Roles",
+      "2. Discount Authorization Limits",
+      "3. What Each Role May Ask Duka Akili",
+      "4. Escalation",
+      "5. Audit",
+    ],
+    aliases: [
+      "roles and access policy",
+      "employee roles",
+      "access policy",
+      "roles policy",
+      "sera ya majukumu",
+    ],
   },
   {
     id: "pricing_and_discount_policy.md",
@@ -120,14 +146,45 @@ export const KNOWLEDGE_DOCS: KnowledgeDoc[] = [
 
 const DOCS_BY_ID = new Map(KNOWLEDGE_DOCS.map((doc) => [doc.id.toLowerCase(), doc]));
 
+/**
+ * Documents uploaded at runtime, which are not in the static catalog above.
+ *
+ * Without this, a citation to an uploaded document fails to resolve and is
+ * silently dropped, and the answer can end up credited to whichever catalog
+ * document happens to share a word with the prose. That is not hypothetical:
+ * an answer built entirely from an uploaded M-Pesa policy was attributed to
+ * the KRA tax guide, because the phrase "turnover tax" appeared in it.
+ */
+const LIVE_DOCS = new Map<string, KnowledgeDoc>();
+
+export function registerLiveDocuments(
+  docs: { document: string; title: string; sections: string[] }[],
+): void {
+  for (const doc of docs) {
+    const key = doc.document.toLowerCase();
+    if (DOCS_BY_ID.has(key)) continue; // the static entry is richer, keep it
+    LIVE_DOCS.set(key, {
+      id: doc.document,
+      label: doc.title,
+      title: doc.title,
+      kind: "policy",
+      blurb: "",
+      sections: doc.sections,
+      // No aliases. Guessing prose names for an unknown document is exactly
+      // what caused the misattribution described above.
+      aliases: [],
+    });
+  }
+}
+
 export function findDoc(id: string | null | undefined): KnowledgeDoc | undefined {
   if (!id) return undefined;
   const key = id.toLowerCase().trim();
-  const direct = DOCS_BY_ID.get(key);
+  const direct = DOCS_BY_ID.get(key) ?? LIVE_DOCS.get(key);
   if (direct) return direct;
   // Citations sometimes arrive as a path, e.g. app/docs/foo.md
   const basename = key.split(/[\\/]/).pop() ?? key;
-  return DOCS_BY_ID.get(basename);
+  return DOCS_BY_ID.get(basename) ?? LIVE_DOCS.get(basename);
 }
 
 export const DOC_KIND_LABEL: Record<DocKind, string> = {
@@ -135,6 +192,7 @@ export const DOC_KIND_LABEL: Record<DocKind, string> = {
   handbook: "Staff handbook",
   policy: "Internal policy",
   tax: "Tax guide",
+  access: "Roles and access",
 };
 
 export interface StarterPrompt {
@@ -147,12 +205,18 @@ export interface StarterPrompt {
 
 export const STARTER_PROMPTS: StarterPrompt[] = [
   {
-    text: "How long do I have to report damaged stock?",
+    // Naming the supplier is deliberate. Tested live: the generic phrasing
+    // "How long do I have to report damaged stock?" sometimes retrieves only
+    // 2 of the 3 relevant documents (retrieval is similarity based, not
+    // exhaustive), which can miss the real conflict this prompt exists to
+    // demonstrate. Naming Unga Millers reliably pulls in both the contract
+    // (48 hours) and the staff handbook (7 days).
+    text: "How long do I have to report damaged stock from Unga Millers?",
     hint: "Contract vs handbook",
     highlight: true,
   },
   {
-    text: "Can I pay the delivery driver in cash?",
+    text: "Can I pay the Unga Millers delivery driver in cash?",
     hint: "Contract vs handbook",
     highlight: true,
   },

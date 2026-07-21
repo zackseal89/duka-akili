@@ -1,6 +1,6 @@
 # Supplier Agreement: Coastal Beverages Distributors
 
-**Parties:** Coastal Beverages Distributors ("Supplier") and the Retailer
+**Parties:** Coastal Beverages Distributors ("Supplier") and Baraka General Store, Kawangware ("Retailer")
 **Effective date:** 2026-05-20
 **Products covered:** Soda (sodas and soft drinks), maji (bottled water), juice cartons
 

@@ -1,6 +1,6 @@
 # Supplier Agreement: Unga Millers Ltd
 
-**Parties:** Unga Millers Ltd ("Supplier") and the Retailer
+**Parties:** Unga Millers Ltd ("Supplier") and Baraka General Store, Kawangware ("Retailer")
 **Effective date:** 2026-03-01
 **Products covered:** Unga wa ngano (wheat flour), unga wa mahindi (maize flour), sukari (sugar), mchele (rice)
 

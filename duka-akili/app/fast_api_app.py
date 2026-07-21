@@ -15,7 +15,7 @@
 import os
 
 import google.auth
-from fastapi import FastAPI
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from google.adk.cli.fast_api import get_fast_api_app
 from google.cloud import logging as google_cloud_logging
 
@@ -59,6 +59,73 @@ app: FastAPI = get_fast_api_app(
 )
 app.title = "duka-akili"
 app.description = "API for interacting with the Agent duka-akili"
+
+
+@app.get("/api/documents")
+def list_documents() -> dict[str, object]:
+    """What the agent currently knows about, and how it is chunked."""
+    from app.knowledge.retrieval import get_index
+
+    index = get_index()
+    return {
+        "documents": index.documents(),
+        "total_chunks": len(index.chunks),
+    }
+
+
+@app.post("/api/documents")
+async def upload_document(file: UploadFile = File(...)) -> dict[str, object]:
+    """Index a markdown document, returning the full chunk and embed breakdown.
+
+    The response is deliberately detailed. Retrieval quality depends entirely on
+    how a document is split and embedded, and that step is normally invisible,
+    so the interface shows it instead of asking for trust.
+    """
+    from app.knowledge.retrieval import add_document
+
+    name = os.path.basename(file.filename or "untitled.md")
+    if not name.lower().endswith((".md", ".markdown", ".txt")):
+        raise HTTPException(
+            status_code=400,
+            detail="Upload a markdown or text file (.md, .markdown, .txt).",
+        )
+
+    raw = await file.read()
+    if len(raw) > 512_000:
+        raise HTTPException(status_code=400, detail="File is larger than 500 KB.")
+
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="File must be UTF-8 text.")
+
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="That file is empty.")
+
+    try:
+        return add_document(name, text)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.delete("/api/documents/{name}")
+def delete_document(name: str) -> dict[str, object]:
+    """Remove an uploaded document, so a demo can be reset to a known state."""
+    from app.knowledge.retrieval import get_index
+
+    index = get_index()
+    target = next(
+        (c for c in index.chunks if c.doc == os.path.basename(name)), None
+    )
+    if target is None:
+        raise HTTPException(status_code=404, detail=f"{name} is not indexed.")
+    if not target.uploaded:
+        raise HTTPException(
+            status_code=400,
+            detail="That document ships with the app and cannot be removed.",
+        )
+    removed = index.remove(os.path.basename(name))
+    return {"document": name, "chunks_removed": removed}
 
 
 @app.post("/feedback")

@@ -39,7 +39,8 @@ def search_business_documents(query: str) -> dict[str, Any]:
         `passages` is empty, nothing in the business's documents covers the
         question and you must say so rather than guessing.
     """
-    results = get_index().search(query, k=5)
+    index = get_index()
+    results = index.search(query, k=5)
     passages = [
         {
             "document": chunk.doc,
@@ -53,7 +54,7 @@ def search_business_documents(query: str) -> dict[str, Any]:
     ]
     return {
         "passages": passages,
-        "documents_searched": 5,
+        "documents_searched": len({chunk.doc for chunk in index.chunks}),
         "note": (
             "No passage in the business documents matches this question."
             if not passages

@@ -29,6 +29,9 @@ class Chunk:
     title: str
     section: str
     text: str
+    # True for documents added at runtime through the upload endpoint. Defaults
+    # to False so entries in the prebuilt cache still load unchanged.
+    uploaded: bool = False
 
 
 def _split_sections(text, doc_title):
@@ -99,10 +102,99 @@ class Index:
         self._matrix = matrix
 
     def search(self, query, k=5):
+        if not self.chunks:
+            return []
         q = embed_texts([query], "RETRIEVAL_QUERY")[0]
         scores = self._matrix @ q
         order = np.argsort(-scores)[:k]
         return [(self.chunks[i], float(scores[i])) for i in order]
+
+    def documents(self):
+        """Summarise what is currently indexed, one entry per document."""
+        summary = {}
+        for chunk in self.chunks:
+            entry = summary.setdefault(
+                chunk.doc,
+                {
+                    "document": chunk.doc,
+                    "title": chunk.title,
+                    "sections": [],
+                    "chunks": 0,
+                    "uploaded": chunk.uploaded,
+                },
+            )
+            entry["sections"].append(chunk.section)
+            entry["chunks"] += 1
+        return list(summary.values())
+
+    def add(self, chunks, vectors):
+        """Append newly embedded chunks to the live index."""
+        self.chunks.extend(chunks)
+        self._matrix = (
+            vectors if self._matrix.size == 0 else np.vstack([self._matrix, vectors])
+        )
+
+    def remove(self, doc):
+        """Drop a document from the live index. Returns how many chunks went."""
+        keep = [i for i, c in enumerate(self.chunks) if c.doc != doc]
+        removed = len(self.chunks) - len(keep)
+        if removed:
+            self.chunks = [self.chunks[i] for i in keep]
+            self._matrix = (
+                self._matrix[keep] if keep else np.zeros((0, self._matrix.shape[1]),
+                                                         dtype=np.float32)
+            )
+        return removed
+
+
+def add_document(filename, text):
+    """Chunk, embed and index a markdown document at runtime.
+
+    Returns the full breakdown of what happened, so the interface can show the
+    pipeline rather than just claiming it ran.
+
+    Note this lives in the process's memory: a container restart drops uploads
+    and returns to the prebuilt document set. That is deliberate for a demo,
+    since it needs no database and every session starts from a known state.
+    """
+    import time
+
+    started = time.time()
+
+    title_match = re.match(r"#\s+(.+)", text)
+    title = title_match.group(1).strip() if title_match else Path(filename).stem
+    sections = _split_sections(text, title)
+    if not sections:
+        raise ValueError("No readable content found in that file.")
+
+    chunks = [
+        Chunk(doc=filename, title=title, section=section, text=body, uploaded=True)
+        for section, body in sections
+    ]
+
+    index = get_index()
+    index.remove(filename)  # replace on re-upload rather than duplicating
+    vectors = embed_texts([c.text for c in chunks], "RETRIEVAL_DOCUMENT")
+    index.add(chunks, vectors)
+
+    return {
+        "document": filename,
+        "title": title,
+        "chunks_created": len(chunks),
+        "embedding_model": EMBED_MODEL,
+        "embedding_dimensions": int(vectors.shape[1]),
+        "seconds": round(time.time() - started, 2),
+        "total_chunks_indexed": len(index.chunks),
+        "total_documents_indexed": len(index.documents()),
+        "sections": [
+            {
+                "section": c.section,
+                "characters": len(c.text),
+                "preview": c.text[:180].replace("\n", " ").strip(),
+            }
+            for c in chunks
+        ],
+    }
 
 
 def build_and_cache():

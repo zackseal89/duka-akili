@@ -203,6 +203,15 @@ function reduce(state: TurnState, event: AdkEvent): TurnState {
       if (open) {
         replaceLast({ ...open, text: appendChunk(open.text, text), author: open.author ?? author });
       } else {
+        // The stream switched kind (reasoning <-> answer) or nothing is open
+        // yet. Close whatever WAS open first, or it is orphaned: no longer
+        // last (so openBlockOfKind can never find it again) but still
+        // unclosed (so lastClosedOfKind refuses to match it either). An
+        // orphaned block is invisible to the replay dedup below, and its
+        // content gets pushed a second time when the final partial:false
+        // event replays it. This was a real bug, caught against a live
+        // multi-tool-call turn, not assumed.
+        closeOpenStream();
         push({ kind, id: nextId(kind), text, closed: false, author });
       }
       continue;
@@ -214,6 +223,7 @@ function reduce(state: TurnState, event: AdkEvent): TurnState {
       continue;
     }
 
+    closeOpenStream();
     const closed = lastClosedOfKind(blocks, kind);
     if (closed && covers(closed.text, text)) {
       // Replayed text for a block we already finished. Nothing new.

@@ -14,9 +14,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-# The agent URL is read at request time (see app/page.tsx), so the build does
-# not need it. A placeholder keeps the inlined browser fallback harmless.
-ENV NEXT_PUBLIC_AGENT_URL=http://localhost:8000
+# Deliberately no NEXT_PUBLIC_AGENT_URL here. Next.js inlines NEXT_PUBLIC_*
+# literally at build time, so setting it would freeze that value into the image
+# and make the runtime env var useless. The app reads the non-prefixed
+# AGENT_URL at request time instead (see src/app/page.tsx); set it on the
+# Cloud Run service.
 RUN npm run build
 
 # ---- runner --------------------------------------------------------------

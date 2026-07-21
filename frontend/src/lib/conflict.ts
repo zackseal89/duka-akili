@@ -29,22 +29,22 @@ const STRONG_MARKERS = [
   /\bhayalingani\b/i,
 ];
 
-const WEAK_MARKERS = [
-  /\bdiffers?\b/i,
-  /\bdifferent\b/i,
-  /\bdo(?:es)? not match\b/i,
-  /\bdon't match\b/i,
-  /\bnot the same\b/i,
-  /\bwhereas\b/i,
-  /\btofauti\b/i,
-];
-
 export interface ConflictVerdict {
   isConflict: boolean;
   /** Documents involved, when at least two were cited. */
   documents: string[];
 }
 
+/**
+ * Strong markers only. An earlier version also flagged plain words like
+ * "different" or "whereas" whenever two documents were cited, and it fired on
+ * a real live answer where the agent explicitly reasoned that two suppliers
+ * having different terms is normal, not a conflict, and said so in a plain
+ * answer with no disagreement language at all. The system prompt instructs
+ * the agent to use explicit language ("the shop's records disagree") only
+ * when it has decided there is a genuine conflict, so that language is the
+ * reliable signal. Guessing from incidental wording is not.
+ */
 export function detectConflict(text: string, citations: Citation[]): ConflictVerdict {
   const documents = [...new Set(citations.map((citation) => citation.doc))];
   if (!text || text.trim().length < 20) {
@@ -52,12 +52,7 @@ export function detectConflict(text: string, citations: Citation[]): ConflictVer
   }
 
   const hasStrong = STRONG_MARKERS.some((pattern) => pattern.test(text));
-  if (hasStrong) return { isConflict: true, documents };
-
-  const hasWeak = WEAK_MARKERS.some((pattern) => pattern.test(text));
-  if (hasWeak && documents.length >= 2) return { isConflict: true, documents };
-
-  return { isConflict: false, documents };
+  return { isConflict: hasStrong, documents };
 }
 
 /**
@@ -67,9 +62,14 @@ export function detectConflict(text: string, citations: Citation[]): ConflictVer
  */
 const REFUSAL_MARKERS = [
   /\b(?:i (?:can(?:'|no)?t|cannot|could not|couldn't|don'?t|do not))\b[^.]{0,60}\b(?:find|see|have|know|answer)\b/i,
-  /\bnot (?:covered|mentioned|addressed|specified|stated)\b/i,
+  /\bnot (?:covered|mentioned|addressed|specified|stated|contained?)\b/i,
   /\bno (?:information|section|document|guidance|answer)\b[^.]{0,40}\b(?:about|on|for|covering)\b/i,
   /\bis(?:n'?t| not) in (?:the|your|these) documents?\b/i,
+  // Matches real model phrasing such as "the shop's documents do not contain
+  // the wifi password", where the negation sits on "documents"/"records"
+  // rather than on a first person "I don't know" construction.
+  /\b(?:documents?|records?)\b[^.]{0,40}\b(?:do(?:es)? not|don'?t|doesn'?t)\b[^.]{0,40}\b(?:contain|cover|mention|address|include|have|specify)\b/i,
+  /\bnone of the\b[^.]{0,40}\b(?:documents?|records?)\b[^.]{0,60}\b(?:mention|cover|address|contain|specify)\b/i,
   /\bsipati\b/i,
   /\bhakuna (?:taarifa|habari|maelezo)\b/i,
   /\bhaipo katika\b/i,

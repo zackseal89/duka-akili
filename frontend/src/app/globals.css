@@ -282,6 +282,27 @@
   animation: duka-fade 0.25s ease both;
 }
 
+@keyframes duka-slide-in {
+  from {
+    transform: translateX(1.5rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide {
+  animation: duka-slide-in 0.22s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide {
+    animation: none;
+  }
+}
+
 .sweep::after {
   content: "";
   position: absolute;

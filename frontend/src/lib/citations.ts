@@ -31,7 +31,13 @@ export function resolveSection(
   raw: string | null | undefined,
 ): string | undefined {
   const doc = findDoc(docId);
-  const cleaned = (raw ?? "").replace(/^[\s§#,:.-]+|[\s,;.]+$/g, "").trim();
+  // Strip markdown emphasis too. The agent writes bold in its answers, so a
+  // citation captured from prose can arrive as "2.1**" and render as a chip
+  // reading "§ 2.1**".
+  const cleaned = (raw ?? "")
+    .replace(/[*_`]+/g, "")
+    .replace(/^[\s§#,:.-]+|[\s,;.]+$/g, "")
+    .trim();
   if (!doc) return cleaned || undefined;
   if (!cleaned) return undefined;
 
@@ -104,7 +110,13 @@ export function citationsFromText(text: string): Citation[] {
     });
   }
 
-  // Also catch prose references such as "the Staff Handbook says ...".
+  // Prose matching is a fallback only, used when the answer named no file at
+  // all. When the agent did name its sources, those are authoritative and
+  // guessing further from wording only adds wrong chips: an answer citing an
+  // uploaded M-Pesa policy also contained the words "turnover tax", which
+  // matched the KRA guide's alias and credited the wrong document.
+  if (found.size > 0) return [...found.values()];
+
   const lower = text.toLowerCase();
   for (const doc of KNOWLEDGE_DOCS) {
     const alreadyCited = [...found.values()].some((citation) => citation.doc === doc.id);

@@ -9,3 +9,7 @@ out/
 .env.local
 *.log
 .DS_Store
+
+# ADK local session state, not source
+.adk/
+*.db

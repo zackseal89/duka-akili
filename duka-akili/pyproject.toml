@@ -16,6 +16,10 @@ dependencies = [
     "asyncpg>=0.30.0,<1.0.0",
     "google-genai>=1.0.0",
     "numpy>=1.26.0",
+    # Required by FastAPI for multipart form uploads (the document upload
+    # endpoint). It arrives transitively too, but the upload route depends on
+    # it directly, so it is declared rather than assumed.
+    "python-multipart>=0.0.9",
 ]
 requires-python = ">=3.11,<3.14"
 

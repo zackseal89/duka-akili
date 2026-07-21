@@ -1,7 +1,7 @@
 "use client";
 
 import type { ConnectionState } from "@/lib/useDukaChat";
-import { DukaMark, MoonIcon, PlusIcon, SunIcon } from "./icons";
+import { BookIcon, DukaMark, MoonIcon, PlusIcon, SunIcon } from "./icons";
 import { useTheme } from "./useTheme";
 
 function StatusPill({ state }: { state: ConnectionState }) {
@@ -27,10 +27,12 @@ export function Header({
   connection,
   onReset,
   canReset,
+  onOpenDocuments,
 }: {
   connection: ConnectionState;
   onReset: () => void;
   canReset: boolean;
+  onOpenDocuments: () => void;
 }) {
   const { theme, toggle, ready } = useTheme();
 
@@ -53,6 +55,16 @@ export function Header({
           <span className="hidden sm:block">
             <StatusPill state={connection} />
           </span>
+
+          <button
+            type="button"
+            onClick={onOpenDocuments}
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 text-xs font-medium text-ink-soft shadow-card transition hover:border-brand-line hover:bg-brand-soft/50"
+            title="View and add company documents"
+          >
+            <BookIcon className="h-4 w-4" />
+            <span className="hidden sm:inline">Documents</span>
+          </button>
 
           {canReset ? (
             <button

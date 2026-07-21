@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { fetchDocuments } from "@/lib/documents-api";
+import { registerLiveDocuments } from "@/lib/documents";
 import { useDukaChat } from "@/lib/useDukaChat";
 import { Composer } from "./Composer";
 import { ConnectionBanner } from "./ConnectionBanner";
+import { DocumentLibrary } from "./DocumentLibrary";
 import { EmptyState } from "./EmptyState";
 import { Header } from "./Header";
 import { MessageList } from "./MessageList";
@@ -15,6 +18,23 @@ export function ChatWorkspace({ agentUrl }: { agentUrl: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [pinned, setPinned] = useState(true);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+
+  // Teach the citation resolver about anything indexed at runtime, so a
+  // citation to an uploaded document resolves instead of being dropped.
+  useEffect(() => {
+    let cancelled = false;
+    fetchDocuments(agentUrl)
+      .then((data) => {
+        if (!cancelled) registerLiveDocuments(data.documents);
+      })
+      .catch(() => {
+        // The connection banner already reports an unreachable agent.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [agentUrl]);
 
   const hasMessages = chat.messages.length > 0;
 
@@ -42,7 +62,16 @@ export function ChatWorkspace({ agentUrl }: { agentUrl: string }) {
         connection={chat.connection}
         onReset={chat.reset}
         canReset={hasMessages || chat.isStreaming}
+        onOpenDocuments={() => setLibraryOpen(true)}
       />
+
+      {libraryOpen ? (
+        <DocumentLibrary
+          agentUrl={agentUrl}
+          onClose={() => setLibraryOpen(false)}
+          onAsk={chat.send}
+        />
+      ) : null}
 
       {chat.problem ? (
         <ConnectionBanner
@@ -63,7 +92,10 @@ export function ChatWorkspace({ agentUrl }: { agentUrl: string }) {
             {hasMessages ? (
               <MessageList messages={chat.messages} onRetry={chat.retry} />
             ) : (
-              <EmptyState onPick={chat.send} />
+              <EmptyState
+                onPick={chat.send}
+                onOpenDocuments={() => setLibraryOpen(true)}
+              />
             )}
             <div ref={bottomRef} className="h-1" />
           </div>

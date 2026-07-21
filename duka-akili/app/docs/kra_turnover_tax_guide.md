@@ -1,5 +1,6 @@
 # KRA Turnover Tax (TOT) Guide for Small Retailers
 
+**Shop:** Baraka General Store, Kawangware, Nairobi
 **Source basis:** Kenya Revenue Authority turnover tax guidance for small businesses.
 **Applies to:** businesses with annual gross sales between KES 500,000 and KES 25,000,000, that are not VAT registered.
 

@@ -1,5 +1,6 @@
 # Pricing and Customer Discount Policy
 
+**Shop:** Baraka General Store, Kawangware, Nairobi
 **Last updated:** 2026-01-15
 **Applies to:** all sales, wholesale and retail
 
@@ -24,7 +25,7 @@
 
 ## 4. Manager override
 
-4.1. The shop manager may authorize an additional discount of up to 5% on top of the applicable tier discount for bulk clearance of near-expiry stock. This requires a manager's signature in the sales book and cannot be applied by staff without it.
+4.1. The shop manager may authorize an additional discount of up to 5% on top of the applicable tier discount for bulk clearance of near-expiry stock. This requires a manager's signature in the sales book and cannot be applied by staff without it. See the Employee Roles and Access Policy for who holds shop manager authority and what a shop attendant must escalate instead of approving themselves.
 
 ## 5. Promotional pricing
 

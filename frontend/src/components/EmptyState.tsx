@@ -21,7 +21,13 @@ const HOW_IT_WORKS = [
   },
 ];
 
-export function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
+export function EmptyState({
+  onPick,
+  onOpenDocuments,
+}: {
+  onPick: (prompt: string) => void;
+  onOpenDocuments: () => void;
+}) {
   return (
     <div className="animate-fade mx-auto w-full max-w-3xl py-6 sm:py-10">
       <div className="mb-8 text-center">
@@ -101,10 +107,19 @@ export function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
       </div>
 
       <div className="rounded-2xl border border-line bg-surface-2/60 p-4 sm:p-5">
-        <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-faint">
-          <BookIcon className="h-3.5 w-3.5 text-brand" />
-          What it knows about ({KNOWLEDGE_DOCS.length} documents)
-        </p>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-faint">
+            <BookIcon className="h-3.5 w-3.5 text-brand" />
+            What it knows about ({KNOWLEDGE_DOCS.length} documents)
+          </p>
+          <button
+            type="button"
+            onClick={onOpenDocuments}
+            className="shrink-0 rounded-lg border border-line bg-surface px-2.5 py-1 text-[11px] font-medium text-ink-soft shadow-card transition hover:border-brand-line hover:bg-brand-soft/50 hover:text-brand"
+          >
+            Add a document
+          </button>
+        </div>
         <ul className="grid gap-2.5 sm:grid-cols-2">
           {KNOWLEDGE_DOCS.map((doc) => (
             <li key={doc.id} className="flex items-start gap-2.5">
