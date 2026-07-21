@@ -7,6 +7,7 @@ import {
   isAssistant,
   type AssistantMessage,
   type ChatMessage,
+  type ReasoningBlock,
   type TextBlock,
   type ToolBlock,
   type UserMessage,
@@ -16,6 +17,7 @@ import { detectConflict, detectRefusal } from "@/lib/conflict";
 import { AnswerText } from "./AnswerText";
 import { CitationChips } from "./CitationChips";
 import { ConflictCard } from "./ConflictCard";
+import { ReasoningTrace } from "./ReasoningTrace";
 import { ToolStep } from "./ToolStep";
 import { AlertIcon, DukaMark, RefreshIcon } from "./icons";
 
@@ -72,16 +74,19 @@ function AssistantTurn({
 }) {
   const streaming = message.status === "streaming";
 
-  // Interleave tool steps and text in emission order. Consecutive tool blocks
-  // are grouped so a run of retrievals reads as one compact stack.
+  // Interleave the process stream (reasoning traces and tool steps) with the
+  // answer text, in emission order. Consecutive process blocks are grouped so a
+  // plan-then-retrieve run reads as one compact stack.
+  type ProcessBlock = ToolBlock | ReasoningBlock;
   const { renderItems, answer, citations, conflict, refusal } = useMemo(() => {
-    const items: Array<{ type: "tools"; tools: ToolBlock[] } | { type: "text"; block: TextBlock }> =
-      [];
+    const items: Array<
+      { type: "process"; blocks: ProcessBlock[] } | { type: "text"; block: TextBlock }
+    > = [];
     for (const block of message.blocks) {
-      if (block.kind === "tool") {
+      if (block.kind === "tool" || block.kind === "reasoning") {
         const last = items[items.length - 1];
-        if (last && last.type === "tools") last.tools.push(block);
-        else items.push({ type: "tools", tools: [block] });
+        if (last && last.type === "process") last.blocks.push(block);
+        else items.push({ type: "process", blocks: [block] });
       } else if (block.text.trim() || streaming) {
         items.push({ type: "text", block });
       }
@@ -115,12 +120,20 @@ function AssistantTurn({
       <AgentAvatar />
       <div className="min-w-0 flex-1 space-y-3">
         {renderItems.map((item, index) => {
-          if (item.type === "tools") {
+          if (item.type === "process") {
             return (
-              <div key={`tools-${index}`} className="space-y-2">
-                {item.tools.map((tool) => (
-                  <ToolStep key={tool.id} block={tool} />
-                ))}
+              <div key={`process-${index}`} className="space-y-2">
+                {item.blocks.map((block) =>
+                  block.kind === "tool" ? (
+                    <ToolStep key={block.id} block={block} />
+                  ) : (
+                    <ReasoningTrace
+                      key={block.id}
+                      block={block}
+                      streaming={streaming && !block.closed}
+                    />
+                  ),
+                )}
               </div>
             );
           }
@@ -169,17 +182,17 @@ function AssistantTurn({
 
         {conflict.isConflict ? <CitationChips citations={citations} /> : null}
 
-        {/* Waiting on the first token: tools may be running or nothing yet. */}
-        {streaming && !hasAnswerText ? (
+        {/* Waiting on the first token, and nothing to show yet. Once a reasoning
+            trace or a tool chip exists they carry their own live state, so the
+            generic indicator is only for the very first empty moment. */}
+        {streaming && !hasAnswerText && message.blocks.length === 0 ? (
           <div className="flex items-center gap-2 px-1 py-1 text-sm text-muted">
             <span className="inline-flex gap-1">
               <span className="dot-1 h-1.5 w-1.5 rounded-full bg-brand" />
               <span className="dot-2 h-1.5 w-1.5 rounded-full bg-brand" />
               <span className="dot-3 h-1.5 w-1.5 rounded-full bg-brand" />
             </span>
-            {message.blocks.some((block) => block.kind === "tool")
-              ? "Reading the documents"
-              : "Thinking"}
+            Thinking
           </div>
         ) : null}
 
