@@ -13,3 +13,7 @@ out/
 # ADK local session state, not source
 .adk/
 *.db
+
+# Internal review notes and superseded drafts, not submission material
+JUDGE_REPORT.md
+writeup/
