@@ -167,3 +167,16 @@ about where it is weak:
 ## Licence
 
 [Apache 2.0](LICENSE).
+
+---
+
+### Gemma 4 on Kaggle Hub
+
+[`duka-akili/notebooks/gemma4_from_kagglehub.ipynb`](duka-akili/notebooks/gemma4_from_kagglehub.ipynb)
+proves the reasoning layer above also runs on open **Gemma 4** weights pulled
+from Kaggle Hub, not just the Gemini API. It follows the official
+[GDG on Campus UoN starter template](https://www.kaggle.com/code/gdguon/build-with-gemma-4-hackathon-starter-template-1)
+to load `gemma-4-12b-it` in 4-bit on a free Kaggle GPU, then replays Duka
+Akili's real system instruction against the app's grounded-citation, refusal,
+and conflict-flagging cases. See [`duka-akili/notebooks/README.md`](duka-akili/notebooks/README.md)
+for how to run it.
