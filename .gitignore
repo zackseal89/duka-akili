@@ -17,3 +17,9 @@ out/
 # Internal review notes and superseded drafts, not submission material
 JUDGE_REPORT.md
 writeup/
+
+# Video build-tool state and generated media, not submission material
+demo-video/*
+!demo-video/SCRIPT.md
+!demo-video/build.sh
+!demo-video/build_audio.sh
