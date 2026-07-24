@@ -1,4 +1,4 @@
-# Duka Akili
+# Duka IQ
 
 **Grounded answers from a small business's own documents, in English or Kiswahili.**
 
