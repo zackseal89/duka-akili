@@ -1,0 +1,6 @@
+neonize
+qrcode
+pillow
+flask
+python-dotenv
+httpx
